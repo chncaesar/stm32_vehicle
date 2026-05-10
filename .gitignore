@@ -1,0 +1,11 @@
+# Keil build output
+OBJ/
+
+# Keil generated files
+USER/*.uvguix.*
+USER/JLinkLog.txt
+USER/DebugConfig/
+USER/*.bak
+USER/*.Bak
+USER/*.map
+USER/*.lst

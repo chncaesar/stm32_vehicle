@@ -9,3 +9,6 @@ USER/*.bak
 USER/*.Bak
 USER/*.map
 USER/*.lst
+
+USER/*.uvoptx
+.claude/

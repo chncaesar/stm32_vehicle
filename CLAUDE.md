@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Context
+
+Current development decisions, hardware details, protocol, and TODO list are maintained in:
+**[docs/project_context.md](docs/project_context.md)**
+
+Read this file first before making any changes to firmware or iOS app code.
+
 ## Project Overview
 
 STM32 smart car (智能小车) firmware for STM32F103RC, built with the STM32 Standard Peripheral Library and Keil MDK (uVision). The car supports three driving modes switched via a physical button: forward driving, line tracking, and obstacle avoidance.

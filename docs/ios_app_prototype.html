@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>STM32 小车遥控 · 原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --surface: #14181f;
+    --surface2: #1b2129;
+    --border: #262e38;
+    --border-active: #3a4553;
+    --text: #e8edf5;
+    --text-dim: #6b7a8f;
+    --text-muted: #4a5568;
+    --accent: #f0b429;
+    --accent-glow: rgba(240, 180, 41, 0.25);
+    --cyan: #38bdf8;
+    --cyan-dim: rgba(56, 189, 248, 0.15);
+    --green: #34d399;
+    --red: #ef4444;
+    --red-dim: rgba(239, 68, 68, 0.12);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+    --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(240, 180, 41, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 100%, rgba(56, 189, 248, 0.03) 0%, transparent 50%),
+      var(--bg);
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 393px;
+    max-width: 100%;
+    background: var(--surface);
+    border-radius: 44px;
+    padding: 20px 16px 28px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 20px 80px rgba(0,0,0,0.6),
+      0 4px 24px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Dynamic Island */
+  .dynamic-island {
+    width: 120px;
+    height: 32px;
+    background: #000;
+    border-radius: 20px;
+    margin: 0 auto 16px;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.06);
+  }
+  .dynamic-island::after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #1a2a1a, #0a1a0a);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px 16px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #f0b429 0%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-badge {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--surface2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Connection bar ── */
+  .conn-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    transition: border-color 0.4s, background 0.4s;
+    cursor: pointer;
+    user-select: none;
+  }
+  .conn-bar.ready {
+    border-color: rgba(52, 211, 153, 0.25);
+  }
+  .conn-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    transition: background 0.4s;
+  }
+  .conn-dot.idle { background: var(--text-muted); }
+  .conn-dot.scanning { background: var(--accent); }
+  .conn-dot.ready { background: var(--green); }
+  .conn-dot.error { background: var(--red); }
+
+  .conn-dot.scanning::after,
+  .conn-dot.ready::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  .conn-dot.scanning::after {
+    border: 2px solid var(--accent);
+  }
+  .conn-dot.ready::after {
+    border: 2px solid var(--green);
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0; transform: scale(1.6); }
+  }
+
+  .conn-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    transition: color 0.4s;
+  }
+  .conn-text.ready { color: var(--green); }
+  .conn-text.scanning { color: var(--accent); }
+
+  .conn-action {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--cyan);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--cyan-dim);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .conn-action:hover {
+    background: var(--cyan-dim);
+  }
+
+  /* ── Direction Pad ── */
+  .pad-section {
+    position: relative;
+    padding: 20px 0 10px;
+  }
+  .pad-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .dpad {
+    width: 216px;
+    height: 216px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 72px 72px 72px;
+    grid-template-rows: 72px 72px 72px;
+    gap: 0;
+    position: relative;
+  }
+
+  .dpad-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    outline: none;
+    transition: filter 0.08s;
+  }
+
+  .dpad-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .dpad-btn .btn-bg {
+    position: absolute;
+    inset: 4px;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .dpad-btn:active .btn-bg,
+  .dpad-btn.active .btn-bg {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    transform: scale(0.92);
+    box-shadow: 0 0 24px rgba(240, 180, 41, 0.15);
+  }
+
+  .dpad-btn .btn-icon {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    transition: color 0.1s, transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .dpad-btn:active .btn-icon,
+  .dpad-btn.active .btn-icon {
+    color: var(--accent);
+    transform: scale(0.88);
+  }
+
+  .dpad-btn svg {
+    width: 24px; height: 24px;
+    stroke-width: 1.8;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* center stop */
+  .dpad-center {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .dpad-center .btn-bg {
+    background: var(--red-dim);
+    border-color: rgba(239, 68, 68, 0.15);
+  }
+  .dpad-center .btn-icon { color: var(--red); }
+  .dpad-center:active .btn-bg,
+  .dpad-center.active .btn-bg {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: var(--red);
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.15);
+  }
+  .dpad-center:active .btn-icon,
+  .dpad-center.active .btn-icon {
+    color: var(--red);
+  }
+
+  .dpad-up { grid-column: 2; grid-row: 1; }
+  .dpad-down { grid-column: 2; grid-row: 3; }
+  .dpad-left { grid-column: 1; grid-row: 2; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+
+  /* ── Speed Section ── */
+  .speed-section {
+    padding: 16px 4px 8px;
+  }
+
+  .speed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .speed-header label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+  .speed-value {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--cyan);
+    min-width: 32px;
+    text-align: right;
+    transition: color 0.2s;
+  }
+
+  .speed-track {
+    position: relative;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    touch-action: none;
+  }
+  .speed-fill {
+    height: 100%;
+    width: 44.4%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    transition: width 0.08s;
+    position: relative;
+  }
+  .speed-fill::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--text);
+    box-shadow: 0 0 12px rgba(240, 180, 41, 0.3);
+    border: 2px solid var(--surface);
+  }
+
+  .speed-stops {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 1px 0;
+  }
+  .speed-stop {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .speed-stop.active { background: var(--text-dim); }
+
+  /* ── Command Log ── */
+  .log-section {
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    min-height: 80px;
+    max-height: 100px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .log-section::-webkit-scrollbar { width: 4px; }
+  .log-section::-webkit-scrollbar-track { background: transparent; }
+  .log-section::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-family: var(--font-sans);
+  }
+  .log-label span {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .log-clear {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .log-clear:hover { color: var(--text-dim); }
+
+  .log-entry {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    opacity: 0;
+    animation: log-in 0.2s ease-out forwards;
+  }
+  .log-time {
+    color: var(--text-muted);
+    font-size: 11px;
+    min-width: 50px;
+  }
+  .log-cmd {
+    color: var(--cyan);
+    font-weight: 500;
+  }
+  .log-desc {
+    color: var(--text-dim);
+  }
+
+  @keyframes log-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Scan Modal ── */
+  .scan-modal {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 50;
+    border-radius: 44px;
+    padding: 40px 24px;
+    flex-direction: column;
+  }
+  .scan-modal.open { display: flex; }
+
+  .scan-modal h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .scan-modal .sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .scan-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scan-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .scan-item:hover {
+    border-color: var(--accent);
+    background: rgba(240, 180, 41, 0.04);
+  }
+  .scan-item .name {
+    font-weight: 500;
+    font-size: 15px;
+  }
+  .scan-item .rssi {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .scan-close {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .scan-close:hover {
+    background: var(--border);
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-dim);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    z-index: 100;
+    max-width: 360px;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Status indicator ── */
+  .status-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 4px 0 0;
+    letter-spacing: 0.02em;
+  }
+  .status-hint strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 420px) {
+    .phone { border-radius: 28px; padding: 16px 12px 20px; }
+    .dpad { width: 192px; height: 192px; grid-template-columns: 64px 64px 64px; grid-template-rows: 64px 64px 64px; }
+    .dynamic-island { transform: scale(0.8); }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone" id="app">
+  <div class="dynamic-island"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>STM32 小车</h1>
+    <span class="header-badge">BLE 遥控</span>
+  </div>
+
+  <!-- Connection bar -->
+  <div class="conn-bar" id="connBar">
+    <div class="conn-dot idle" id="connDot"></div>
+    <span class="conn-text" id="connText">未连接</span>
+    <button class="conn-action" id="connBtn">扫描</button>
+  </div>
+
+  <!-- Direction Pad -->
+  <div class="pad-section">
+    <div class="pad-label">方向控制</div>
+    <div class="dpad" id="dpad">
+      <button class="dpad-btn dpad-up" data-dir="forward">
+        <div class="btn-bg"></div>
+        <div class="btn-icon">
+          <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+        </div>
+      </button>
+      <button class="dpad-btn dpad-left" data-dir="left">
+        <div class="btn-bg"></div>
+        <div class="btn-icon">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+      </button>
+      <button class="dpad-btn dpad-center" data-dir="stop">
+        <div class="btn-bg"></div>
+        <div class="btn-icon" style="font-size:18px;font-weight:600;">✕</div>
+      </button>
+      <button class="dpad-btn dpad-right" data-dir="right">
+        <div class="btn-bg"></div>
+        <div class="btn-icon">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+      <button class="dpad-btn dpad-down" data-dir="backward">
+        <div class="btn-bg"></div>
+        <div class="btn-icon">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Speed -->
+  <div class="speed-section">
+    <div class="speed-header">
+      <label>速度</label>
+      <span class="speed-value" id="speedVal">5</span>
+    </div>
+    <div class="speed-track" id="speedTrack">
+      <div class="speed-fill" id="speedFill" style="width:50%"></div>
+    </div>
+    <div class="speed-stops" id="speedStops"></div>
+  </div>
+
+  <!-- Command Log -->
+  <div class="log-section" id="logSection">
+    <div class="log-label">
+      <span>指令日志</span>
+      <button class="log-clear" id="logClear">清空</button>
+    </div>
+    <div id="logEntries"></div>
+  </div>
+
+  <!-- Scan Modal -->
+  <div class="scan-modal" id="scanModal">
+    <h2>扫描设备</h2>
+    <div class="sub">发现以下 BLE 设备</div>
+    <div class="scan-list" id="scanList">
+      <div class="scan-item" data-name="HMSoft">
+        <span class="name">HMSoft</span>
+        <span class="rssi">-65 dBm</span>
+      </div>
+      <div class="scan-item" data-name="HMSoft-2">
+        <span class="name">HMSoft-2</span>
+        <span class="rssi">-72 dBm</span>
+      </div>
+    </div>
+    <button class="scan-close" id="scanClose">取消</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  (function(){
+    'use strict';
+
+    // ── State ──
+    const state = {
+      connected: false,
+      connectionState: 'idle', // idle | scanning | ready | error
+      speed: 5,
+      activeDir: null, // 'forward' | 'backward' | 'left' | 'right' | null
+    };
+
+    // ── DOM refs ──
+    const connBar   = document.getElementById('connBar');
+    const connDot   = document.getElementById('connDot');
+    const connText  = document.getElementById('connText');
+    const connBtn   = document.getElementById('connBtn');
+    const speedVal  = document.getElementById('speedVal');
+    const speedFill = document.getElementById('speedFill');
+    const speedTrack = document.getElementById('speedTrack');
+    const speedStops = document.getElementById('speedStops');
+    const logEntries = document.getElementById('logEntries');
+    const logClear  = document.getElementById('logClear');
+    const scanModal = document.getElementById('scanModal');
+    const scanList  = document.getElementById('scanList');
+    const scanClose = document.getElementById('scanClose');
+    const toast     = document.getElementById('toast');
+    const dpadBtns  = document.querySelectorAll('.dpad-btn');
+    const connBarEl = document.getElementById('connBar');
+
+    let toastTimer = null;
+    let scanningTimer = null;
+    let logCounter = 0;
+
+    // ── Init speed stops ──
+    for (let i = 1; i <= 9; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'speed-stop' + (i <= 5 ? ' active' : '');
+      speedStops.appendChild(dot);
+    }
+
+    // ── Helpers ──
+    function updateSpeedUI(speed) {
+      state.speed = speed;
+      speedVal.textContent = speed;
+      const pct = ((speed - 1) / 8) * 100;
+      speedFill.style.width = pct + '%';
+      const dots = speedStops.querySelectorAll('.speed-stop');
+      dots.forEach((d, i) => d.classList.toggle('active', i < speed));
+    }
+
+    function updateConnUI(connState) {
+      state.connectionState = connState;
+      connDot.className = 'conn-dot ' + connState;
+      connText.className = 'conn-text ' + connState;
+
+      switch (connState) {
+        case 'idle':
+          connText.textContent = '未连接';
+          connBtn.textContent = '扫描';
+          connBarEl.classList.remove('ready');
+          break;
+        case 'scanning':
+          connText.textContent = '扫描中...';
+          connBtn.textContent = '停止';
+          connBarEl.classList.remove('ready');
+          break;
+        case 'ready':
+          connText.textContent = '已连接 HMSoft';
+          connBarEl.classList.add('ready');
+          connBtn.textContent = '断开';
+          break;
+        case 'error':
+          connText.textContent = '蓝牙不可用';
+          connBtn.textContent = '重试';
+          connBarEl.classList.remove('ready');
+          break;
+      }
+    }
+
+    function showToast(msg, duration) {
+      duration = duration || 2000;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    function addLog(cmd, desc) {
+      logCounter++;
+      const now = new Date();
+      const time = now.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="log-time">${time}</span><span class="log-cmd">${cmd}</span><span class="log-desc">${desc}</span>`;
+      logEntries.appendChild(entry);
+      // Constrain to last 50 entries
+      while (logEntries.children.length > 50) logEntries.removeChild(logEntries.firstChild);
+      // Auto scroll
+      const logSection = document.getElementById('logSection');
+      logSection.scrollTop = logSection.scrollHeight;
+    }
+
+    function sendCommand(cmd, desc) {
+      addLog(cmd, desc);
+      // Simulate BLE send (visual feedback only in prototype)
+    }
+
+    // ── Direction Pad ──
+    dpadBtns.forEach(btn => {
+      const dir = btn.dataset.dir;
+
+      // Mouse
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (dir === 'stop') {
+          handleStop();
+          btn.classList.add('active');
+          return;
+        }
+        if (!state.connected || dir === 'stop') return;
+        if (state.activeDir === dir) return;
+        // Release previous direction first
+        if (state.activeDir) {
+          const prev = document.querySelector(`.dpad-btn[data-dir="${state.activeDir}"]`);
+          if (prev) prev.classList.remove('active');
+          sendCommand('ONF', '松开 ' + dirLabel(state.activeDir));
+        }
+        state.activeDir = dir;
+        btn.classList.add('active');
+
+        const cmd = dirToCmd(dir);
+        sendCommand(cmd, '按住 ' + dirLabel(dir));
+      });
+
+      // Global mouseup to handle release outside button
+      document.addEventListener('mouseup', () => {
+        if (dir === 'stop') {
+          btn.classList.remove('active');
+          return;
+        }
+        if (state.activeDir === dir) {
+          btn.classList.remove('active');
+          sendCommand('ONF', '松开 ' + dirLabel(dir));
+          state.activeDir = null;
+        }
+      });
+
+      // Touch events (for mobile)
+      btn.addEventListener('touchstart', (e) => {
+        if (dir === 'stop') {
+          handleStop();
+          btn.classList.add('active');
+          return;
+        }
+        if (!state.connected) return;
+        if (state.activeDir === dir) return;
+        if (state.activeDir) {
+          const prev = document.querySelector(`.dpad-btn[data-dir="${state.activeDir}"]`);
+          if (prev) prev.classList.remove('active');
+          sendCommand('ONF', '松开 ' + dirLabel(state.activeDir));
+        }
+        state.activeDir = dir;
+        btn.classList.add('active');
+        sendCommand(dirToCmd(dir), '按住 ' + dirLabel(dir));
+      }, { passive: true });
+
+      btn.addEventListener('touchend', (e) => {
+        if (dir === 'stop') {
+          btn.classList.remove('active');
+          return;
+        }
+        if (state.activeDir === dir) {
+          btn.classList.remove('active');
+          sendCommand('ONF', '松开 ' + dirLabel(dir));
+          state.activeDir = null;
+        }
+      }, { passive: true });
+
+      btn.addEventListener('touchcancel', (e) => {
+        if (dir === 'stop') {
+          btn.classList.remove('active');
+          return;
+        }
+        if (state.activeDir === dir) {
+          btn.classList.remove('active');
+          sendCommand('ONF', '松开 ' + dirLabel(dir));
+          state.activeDir = null;
+        }
+      }, { passive: true });
+    });
+
+    function handleStop() {
+      sendCommand('ONE', '紧急停车');
+      if (state.activeDir) {
+        const prev = document.querySelector(`.dpad-btn[data-dir="${state.activeDir}"]`);
+        if (prev) prev.classList.remove('active');
+        state.activeDir = null;
+      }
+    }
+
+    function dirToCmd(dir) {
+      switch (dir) {
+        case 'forward':  return 'ONA';
+        case 'backward': return 'ONB';
+        case 'left':     return 'ONC';
+        case 'right':    return 'OND';
+        default:         return 'ONF';
+      }
+    }
+
+    function dirLabel(dir) {
+      switch (dir) {
+        case 'forward':  return '前进';
+        case 'backward': return '后退';
+        case 'left':     return '左转';
+        case 'right':    return '右转';
+        default:         return '';
+      }
+    }
+
+    // ── Speed (drag on track) ──
+    function speedFromEvent(clientX) {
+      const rect = speedTrack.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, x / rect.width));
+      return Math.max(1, Math.min(9, Math.round(pct * 8 + 1)));
+    }
+
+    function handleSpeedChange(newSpeed, showCmd) {
+      if (newSpeed === state.speed) return;
+      const oldSpeed = state.speed;
+      updateSpeedUI(newSpeed);
+      if (showCmd !== false) {
+        // Speed change: send press + release
+        const pCmd = 'ON' + newSpeed;
+        const rCmd = 'ON' + String.fromCharCode(96 + newSpeed); // ONa~ONi
+        sendCommand(pCmd, '速度 ' + newSpeed + ' (按下)');
+        sendCommand(rCmd, '速度 ' + newSpeed + ' (松开)');
+      }
+    }
+
+    speedTrack.addEventListener('mousedown', (e) => {
+      const s = speedFromEvent(e.clientX);
+      handleSpeedChange(s, true);
+      function onMove(ev) {
+        const s2 = speedFromEvent(ev.clientX);
+        handleSpeedChange(s2, false);
+      }
+      function onUp() {
+        // Send final command on release
+        sendCommand('ON' + state.speed, '速度设为 ' + state.speed);
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    speedTrack.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const s = speedFromEvent(touch.clientX);
+      handleSpeedChange(s, true);
+    }, { passive: false });
+
+    speedTrack.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const s = speedFromEvent(touch.clientX);
+      handleSpeedChange(s, false);
+    }, { passive: false });
+
+    speedTrack.addEventListener('touchend', (e) => {
+      sendCommand('ON' + state.speed, '速度设为 ' + state.speed);
+    }, { passive: true });
+
+    // ── Connection ──
+    connBtn.addEventListener('click', () => {
+      switch (state.connectionState) {
+        case 'idle':
+          startScan();
+          break;
+        case 'scanning':
+          stopScan();
+          break;
+        case 'ready':
+          disconnect();
+          break;
+        case 'error':
+          updateConnUI('idle');
+          break;
+      }
+    });
+
+    function startScan() {
+      updateConnUI('scanning');
+      scanModal.classList.add('open');
+      scanningTimer = setTimeout(() => {
+        // Auto-connect to first device after "scan"
+        if (state.connectionState === 'scanning') {
+          connectToDevice();
+        }
+      }, 1500);
+    }
+
+    function stopScan() {
+      clearTimeout(scanningTimer);
+      scanModal.classList.remove('open');
+      updateConnUI('idle');
+    }
+
+    function connectToDevice() {
+      clearTimeout(scanningTimer);
+      scanModal.classList.remove('open');
+      updateConnUI('ready');
+      state.connected = true;
+      showToast('已连接 HMSoft', 2000);
+      sendCommand('---', 'BLE 连接已建立');
+      sendCommand('ONF', '初始停车');
+    }
+
+    function disconnect() {
+      handleStop();
+      state.connected = false;
+      updateConnUI('idle');
+      showToast('已断开连接', 1500);
+      sendCommand('---', 'BLE 连接已断开');
+    }
+
+    // Scan modal item click
+    scanList.addEventListener('click', (e) => {
+      const item = e.target.closest('.scan-item');
+      if (!item) return;
+      connectToDevice();
+    });
+
+    scanClose.addEventListener('click', stopScan);
+
+    // ── Log Clear ──
+    logClear.addEventListener('click', () => {
+      logEntries.innerHTML = '';
+      logCounter = 0;
+    });
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (scanModal.classList.contains('open')) return;
+      const keyMap = {
+        'ArrowUp': 'forward',
+        'ArrowDown': 'backward',
+        'ArrowLeft': 'left',
+        'ArrowRight': 'right',
+        ' ': 'stop',
+      };
+      const dir = keyMap[e.key];
+      if (!dir) return;
+      e.preventDefault();
+      const btn = document.querySelector(`.dpad-btn[data-dir="${dir}"]`);
+      if (!btn) return;
+
+      if (dir === 'stop') {
+        handleStop();
+        btn.classList.add('active');
+        return;
+      }
+      if (!state.connected) return;
+      if (state.activeDir === dir) return;
+      if (state.activeDir) {
+        const prev = document.querySelector(`.dpad-btn[data-dir="${state.activeDir}"]`);
+        if (prev) prev.classList.remove('active');
+        sendCommand('ONF', '松开 ' + dirLabel(state.activeDir));
+      }
+      state.activeDir = dir;
+      btn.classList.add('active');
+      sendCommand(dirToCmd(dir), '按住 ' + dirLabel(dir));
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const keyMap = {
+        'ArrowUp': 'forward',
+        'ArrowDown': 'backward',
+        'ArrowLeft': 'left',
+        'ArrowRight': 'right',
+        ' ': 'stop',
+      };
+      const dir = keyMap[e.key];
+      if (!dir) return;
+      const btn = document.querySelector(`.dpad-btn[data-dir="${dir}"]`);
+      if (!btn) return;
+
+      if (dir === 'stop') {
+        btn.classList.remove('active');
+        return;
+      }
+      if (state.activeDir === dir) {
+        btn.classList.remove('active');
+        sendCommand('ONF', '松开 ' + dirLabel(dir));
+        state.activeDir = null;
+      }
+    });
+
+    // ── Init ──
+    updateSpeedUI(5);
+    updateConnUI('idle');
+    addLog('---', '遥控器就绪，等待 BLE 连接');
+    addLog('---', '点击「扫描」搜索 HM-10 设备');
+
+    // ── Simulate BLE state change on dot click for demo ──
+    connDot.addEventListener('dblclick', () => {
+      // Easter egg: double click dot to toggle connection for demo
+      if (state.connected) {
+        disconnect();
+      } else {
+        connectToDevice();
+      }
+    });
+
+    console.log('STM32 小车遥控 · 交互原型已加载');
+    console.log('键盘快捷键: ↑↓←→ 控制方向, Space 停车');
+  })();
+</script>
+</body>
+</html>

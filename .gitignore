@@ -12,3 +12,9 @@ USER/*.lst
 
 USER/*.uvoptx
 .claude/
+
+# Xcode build artifacts
+.build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+DerivedData/

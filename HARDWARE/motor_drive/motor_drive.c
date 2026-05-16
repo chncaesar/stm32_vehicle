@@ -1,6 +1,5 @@
 #include "motor_drive.h"
 #include <math.h>
-#include "delay.h"
 
 // TIM4 PWM 及电机方向 GPIO 初始化
 // arr: 自动重装值, psc: 预分频值
@@ -92,71 +91,64 @@ void Right_motor_speed_control(signed char speed)
 }
 
 // 前进
-void driving_state_run(signed char speed, int time)
+void driving_state_run(signed char speed)
 {
-	L298N_IN1 = 0; L298N_IN2 = 1; // 左电机正转
-	L298N_IN3 = 1; L298N_IN4 = 0; // 右电机正转
+	L298N_IN1 = 0; L298N_IN2 = 1;
+	L298N_IN3 = 1; L298N_IN4 = 0;
 	Left_motor_speed_control(speed);
 	Right_motor_speed_control(speed);
-	delay_ms(time);
 }
 
 // 停止
-void driving_state_stop(int time)
+void driving_state_stop(void)
 {
-	L298N_IN1 = 0; L298N_IN2 = 0; // 左电机停
-	L298N_IN3 = 0; L298N_IN4 = 0; // 右电机停
+	L298N_IN1 = 0; L298N_IN2 = 0;
+	L298N_IN3 = 0; L298N_IN4 = 0;
 	Left_motor_speed_control(0);
 	Right_motor_speed_control(0);
-	delay_ms(time);
 }
 
 // 左转（左轮停，右轮转）
-void driving_state_left(signed char speed, int time)
+void driving_state_left(signed char speed)
 {
-	L298N_IN1 = 0; L298N_IN2 = 0; // 左电机停
-	L298N_IN3 = 1; L298N_IN4 = 0; // 右电机正转
+	L298N_IN1 = 0; L298N_IN2 = 0;
+	L298N_IN3 = 1; L298N_IN4 = 0;
 	Left_motor_speed_control(0);
 	Right_motor_speed_control(speed);
-	delay_ms(time);
 }
 
 // 原地左转（左轮反转，右轮正转）
-void driving_state_spin_left(signed char speed, int time)
+void driving_state_spin_left(signed char speed)
 {
-	L298N_IN1 = 1; L298N_IN2 = 0; // 左电机反转
-	L298N_IN3 = 1; L298N_IN4 = 0; // 右电机正转
+	L298N_IN1 = 1; L298N_IN2 = 0;
+	L298N_IN3 = 1; L298N_IN4 = 0;
 	Left_motor_speed_control(speed);
 	Right_motor_speed_control(speed);
-	delay_ms(time);
 }
 
 // 右转（左轮转，右轮停）
-void driving_state_right(signed char speed, int time)
+void driving_state_right(signed char speed)
 {
-	L298N_IN1 = 0; L298N_IN2 = 1; // 左电机正转
-	L298N_IN3 = 0; L298N_IN4 = 0; // 右电机停
+	L298N_IN1 = 0; L298N_IN2 = 1;
+	L298N_IN3 = 0; L298N_IN4 = 0;
 	Left_motor_speed_control(speed);
 	Right_motor_speed_control(0);
-	delay_ms(time);
 }
 
 // 原地右转（左轮正转，右轮反转）
-void driving_state_spin_right(signed char speed, int time)
+void driving_state_spin_right(signed char speed)
 {
-	L298N_IN1 = 0; L298N_IN2 = 1; // 左电机正转
-	L298N_IN3 = 0; L298N_IN4 = 1; // 右电机反转
+	L298N_IN1 = 0; L298N_IN2 = 1;
+	L298N_IN3 = 0; L298N_IN4 = 1;
 	Left_motor_speed_control(speed);
 	Right_motor_speed_control(speed);
-	delay_ms(time);
 }
 
 // 后退
-void driving_state_back(signed char speed, int time)
+void driving_state_back(signed char speed)
 {
-	L298N_IN1 = 1; L298N_IN2 = 0; // 左电机反转
-	L298N_IN3 = 0; L298N_IN4 = 1; // 右电机反转
+	L298N_IN1 = 1; L298N_IN2 = 0;
+	L298N_IN3 = 0; L298N_IN4 = 1;
 	Left_motor_speed_control(speed);
 	Right_motor_speed_control(speed);
-	delay_ms(time);
 }

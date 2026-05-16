@@ -574,16 +574,6 @@
               <FilePath>..\HARDWARE\motor_drive\motor_drive.c</FilePath>
             </File>
             <File>
-              <FileName>obstacle_avoidance.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\obstacle_avoidance\obstacle_avoidance.c</FilePath>
-            </File>
-            <File>
-              <FileName>tracking.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\tracking\tracking.c</FilePath>
-            </File>
-            <File>
               <FileName>beep.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\BEEP\beep.c</FilePath>

@@ -8,7 +8,16 @@
 #include "string.h"
 #include <stdio.h>
 
+#define BT_TIMEOUT_MS  500
+
+volatile u32 bt_tick = 0;          // SysTick 每 1ms 自增
+static u32   last_rx_tick = 0;
 static signed char current_speed = 50;
+
+void SysTick_Handler(void)
+{
+    bt_tick++;
+}
 
 void led_beep_switch(u8 value)
 {
@@ -26,6 +35,7 @@ void led_beep_switch(u8 value)
 static void bluetooth_cmd_parse(void)
 {
 	u8 len = USART_RX_STA & 0x3FFF;
+	last_rx_tick = bt_tick;
 	if (len == 3) {
 		if      (strncmp((char*)USART_RX_BUF, "ONA", 3) == 0) driving_state_run(current_speed);
 		else if (strncmp((char*)USART_RX_BUF, "ONB", 3) == 0) driving_state_back(current_speed);
@@ -44,10 +54,14 @@ static void bluetooth_cmd_parse(void)
 
 int main(void)
 {
-	u32 no_data_count = 0;
-
 	delay_init();
 	uart_init(9600);
+
+	// 配置 SysTick 为 1ms 中断（HCLK/8 = 9MHz，9000 计数 = 1ms）
+	SysTick->LOAD = 9000 - 1;
+	SysTick->VAL  = 0;
+	SysTick->CTRL = SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+
 	TIM4_PWM_Init(7199, 0);
 	LED_Init();
 	BEEP_Init();
@@ -55,18 +69,16 @@ int main(void)
 	KEY_Init();
 
 	driving_state_stop();
+	// 上电后等 led_beep_switch 完成再开始计时，避免误判超时
 	led_beep_switch(3);
+	last_rx_tick = bt_tick;
 
 	while (1) {
 		if (USART_RX_STA & 0x8000) {
-			no_data_count = 0;
 			bluetooth_cmd_parse();
-		} else {
-			no_data_count++;
-			if (no_data_count > 50000) {
-				driving_state_stop();
-				no_data_count = 50000;
-			}
+		}
+		if (bt_tick - last_rx_tick > BT_TIMEOUT_MS) {
+			driving_state_stop();
 		}
 	}
 }

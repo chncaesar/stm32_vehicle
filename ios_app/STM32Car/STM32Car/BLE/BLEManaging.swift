@@ -8,7 +8,7 @@ protocol BLEManaging: AnyObject {
     var discoveredPeripherals: [DiscoveredPeripheral] { get set }
 
     var connectionStatePublisher: Published<ConnectionState>.Publisher { get }
-    var discoveredPeripheralsPublisher: Published<DiscoveredPeripheral>.Publisher { get }
+    var discoveredPeripheralsPublisher: Published<[DiscoveredPeripheral]>.Publisher { get }
 
     func startScan()
     func stopScan()

@@ -14,28 +14,24 @@ struct DirectionPad: View {
     @State private var isPressing = false
 
     var body: some View {
-        Grid(horizontalSpacing: 0, verticalSpacing: 0) {
-            GridRow {
-                Color.clear
-                    .gridCellUnsizedAxes([.horizontal, .vertical])
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Color.clear.frame(width: 88, height: 88)
                 directionButton(.forward, icon: "chevron.up")
-                Color.clear
-                    .gridCellUnsizedAxes([.horizontal, .vertical])
+                Color.clear.frame(width: 88, height: 88)
             }
-            GridRow {
+            HStack(spacing: 8) {
                 directionButton(.left, icon: "chevron.left")
                 stopButton
                 directionButton(.right, icon: "chevron.right")
             }
-            GridRow {
-                Color.clear
-                    .gridCellUnsizedAxes([.horizontal, .vertical])
+            HStack(spacing: 8) {
+                Color.clear.frame(width: 88, height: 88)
                 directionButton(.backward, icon: "chevron.down")
-                Color.clear
-                    .gridCellUnsizedAxes([.horizontal, .vertical])
+                Color.clear.frame(width: 88, height: 88)
             }
         }
-        .frame(width: 216, height: 216)
+        .frame(width: 288, height: 288)
     }
 
     // MARK: - Direction Button
@@ -46,8 +42,8 @@ struct DirectionPad: View {
             // onTapGesture 不会触发这里；DragGesture 处理所有事件
         } label: {
             Image(systemName: icon)
-                .font(.title2.weight(.semibold))
-                .frame(width: 64, height: 64)
+                .font(.title.weight(.semibold))
+                .frame(width: 88, height: 88)
                 .background {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(.regularMaterial)
@@ -82,8 +78,8 @@ struct DirectionPad: View {
             onEmergencyStop()
         } label: {
             Image(systemName: "stop.fill")
-                .font(.title3.weight(.bold))
-                .frame(width: 56, height: 56)
+                .font(.title.weight(.bold))
+                .frame(width: 80, height: 80)
                 .background {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(.red.opacity(0.12))

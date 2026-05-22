@@ -20,11 +20,21 @@
 		00000002000000010000000D /* SpeedSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000001000000010000000D /* SpeedSlider.swift */; };
 		00000002000000010000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 00000001000000010000000F /* Assets.xcassets */; };
 		00000002000000010000000F /* BLECommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000011 /* BLECommandTests.swift */; };
-		000000020000000100000012 /* MockBLEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000015 /* MockBLEManager.swift */; };
-		000000020000000100000013 /* CarControlViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000016 /* CarControlViewModelTests.swift */; };
 		000000020000000100000010 /* DiscoveredPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000013 /* DiscoveredPeripheral.swift */; };
 		000000020000000100000011 /* BLEManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000014 /* BLEManaging.swift */; };
+		000000020000000100000012 /* MockBLEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000015 /* MockBLEManager.swift */; };
+		000000020000000100000013 /* CarControlViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000010000000100000016 /* CarControlViewModelTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		000000060000000200000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000090000000100000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000050000000100000001;
+			remoteInfo = STM32Car;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		000000010000000100000001 /* STM32CarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STM32CarApp.swift; sourceTree = "<group>"; };
@@ -40,13 +50,13 @@
 		00000001000000010000000D /* SpeedSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedSlider.swift; sourceTree = "<group>"; };
 		00000001000000010000000E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00000001000000010000000F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		000000010000000100000013 /* DiscoveredPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredPeripheral.swift; sourceTree = "<group>"; };
-		000000010000000100000014 /* BLEManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManaging.swift; sourceTree = "<group>"; };
 		000000010000000100000010 /* STM32Car.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = STM32Car.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000010000000100000011 /* BLECommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLECommandTests.swift; sourceTree = "<group>"; };
+		000000010000000100000012 /* STM32CarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = STM32CarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000010000000100000013 /* DiscoveredPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredPeripheral.swift; sourceTree = "<group>"; };
+		000000010000000100000014 /* BLEManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManaging.swift; sourceTree = "<group>"; };
 		000000010000000100000015 /* MockBLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBLEManager.swift; sourceTree = "<group>"; };
 		000000010000000100000016 /* CarControlViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarControlViewModelTests.swift; sourceTree = "<group>"; };
-		000000010000000100000012 /* STM32CarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = STM32CarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,12 +70,11 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		000000030000000000000000 /* = */ = {
+		000000030000000000000000 = {
 			isa = PBXGroup;
 			children = (
 				000000030000000100000001 /* STM32Car */,
 				000000030000000100000009 /* STM32CarTests */,
-				000000030000000800000001 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
@@ -182,7 +191,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 000000080000000200000002 /* Build configuration list for PBXNativeTarget "STM32CarTests" */;
 			buildPhases = (
-				000000040000000100000002 /* Test Sources */,
+				000000040000000100000002 /* Sources */,
 				000000040000000400000002 /* Frameworks */,
 			);
 			buildRules = (
@@ -223,7 +232,7 @@
 				"zh-Hans",
 				Base,
 			);
-			mainGroup = 000000030000000000000000 /* = */;
+			mainGroup = 000000030000000000000000;
 			productRefGroup = 000000030000000100000008 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -266,7 +275,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		000000040000000100000002 /* Test Sources */ = {
+		000000040000000100000002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -285,16 +294,6 @@
 			targetProxy = 000000060000000200000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXContainerItemProxy section */
-		000000060000000200000001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 000000090000000100000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 000000050000000100000001;
-			remoteInfo = STM32Car;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin XCBuildConfiguration section */
 		000000070000000100000001 /* Debug */ = {
@@ -316,7 +315,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -339,7 +338,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -354,9 +353,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = S394MV4B4G;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "STM32Car/Resources/Info.plist";
+				INFOPLIST_FILE = STM32Car/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "STM32 Car";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -377,9 +376,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = S394MV4B4G;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "STM32Car/Resources/Info.plist";
+				INFOPLIST_FILE = STM32Car/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "STM32 Car";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -401,7 +400,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stm32car.remote.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -419,7 +418,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stm32car.remote.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

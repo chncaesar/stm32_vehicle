@@ -13,8 +13,7 @@ struct SpeedSlider: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text("\(speed)")
-                    .font(.title2.weight(.semibold))
-                    .contentTransition(.numericText())
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(.tint)
                     .monospacedDigit()
                     .frame(minWidth: 28, alignment: .trailing)
@@ -35,8 +34,12 @@ struct SpeedSlider: View {
 
 // MARK: - Preview
 
-#Preview {
-    @Previewable @State var speed = 5
-    SpeedSlider(speed: $speed)
-        .padding()
+struct SpeedSlider_Previews: PreviewProvider {
+    struct Wrapper: View {
+        @State var speed = 5
+        var body: some View {
+            SpeedSlider(speed: $speed).padding()
+        }
+    }
+    static var previews: some View { Wrapper() }
 }

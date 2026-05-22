@@ -1,4 +1,4 @@
-import CoreBluetooth
+@preconcurrency import CoreBluetooth
 import Combine
 import UIKit
 
@@ -125,7 +125,7 @@ class BLEManager: NSObject, ObservableObject {
 
 extension BLEManager: BLEManaging {
     var connectionStatePublisher: Published<ConnectionState>.Publisher { $connectionState }
-    var discoveredPeripheralsPublisher: Published<DiscoveredPeripheral>.Publisher { $discoveredPeripherals }
+    var discoveredPeripheralsPublisher: Published<[DiscoveredPeripheral]>.Publisher { $discoveredPeripherals }
 }
 
 // MARK: - CBCentralManagerDelegate
@@ -133,39 +133,43 @@ extension BLEManager: BLEManaging {
 extension BLEManager: CBCentralManagerDelegate {
 
     nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        MainActor.run { [weak self] in
-            switch central.state {
+        let state = central.state  // CBManagerState is Sendable
+        MainActor.assumeIsolated {
+            switch state {
             case .poweredOn:
-                // 如果之前是因权限等问题断开，回到 idle 等待用户操作
-                if case .error = self?.connectionState {
-                    self?.connectionState = .idle
+                if case .error = connectionState {
+                    connectionState = .idle
                 }
             case .unauthorized:
-                self?.connectionState = .error("蓝牙权限被拒绝，请前往设置开启")
+                connectionState = .error("蓝牙权限被拒绝，请前往设置开启")
             case .unsupported:
-                self?.connectionState = .error("此设备不支持蓝牙")
+                connectionState = .error("此设备不支持蓝牙")
             case .poweredOff:
-                self?.connectionState = .error("蓝牙已关闭")
+                connectionState = .error("蓝牙已关闭")
             default:
-                self?.connectionState = .error("蓝牙不可用")
+                connectionState = .error("蓝牙不可用")
             }
         }
     }
 
     nonisolated func centralManager(_ central: CBCentralManager,
                                     willRestoreState dict: [String: Any]) {
-        MainActor.run { [weak self] in
-            let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral]
-            guard let peripheral = peripherals?.first else { return }
-            self?.targetPeripheral = peripheral
-            self?.reconnectAttempts = 0
-            if peripheral.state == .connected {
-                // 系统已恢复连接，直接开始服务发现
-                self?.connectionState = .discoveringServices
-                peripheral.delegate = self
-                peripheral.discoverServices([BLEConstants.serviceUUID])
+        let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral]
+        guard let peripheral = peripherals?.first else { return }
+        let isConnected = peripheral.state == .connected
+        let name = peripheral.name ?? "未知设备"
+        // peripheral is a CoreBluetooth object delivered on the main queue;
+        // safe to hand to MainActor since CBCentralManager(queue: nil) guarantees main-thread delivery.
+        nonisolated(unsafe) let p = peripheral
+        MainActor.assumeIsolated {
+            targetPeripheral = p
+            reconnectAttempts = 0
+            if isConnected {
+                connectionState = .discoveringServices
+                p.delegate = self
+                p.discoverServices([BLEConstants.serviceUUID])
             } else {
-                self?.connectionState = .connecting(peripheral: peripheral.name ?? "未知设备")
+                connectionState = .connecting(peripheral: name)
             }
         }
     }
@@ -174,23 +178,22 @@ extension BLEManager: CBCentralManagerDelegate {
                                     didDiscover peripheral: CBPeripheral,
                                     advertisementData: [String: Any],
                                     rssi RSSI: NSNumber) {
-        MainActor.run { [weak self] in
+        MainActor.assumeIsolated {
             let discovered = DiscoveredPeripheral(peripheral: peripheral, rssi: RSSI)
-            // 去重：替换同名或同 identifier 的设备
-            if let idx = self?.discoveredPeripherals.firstIndex(where: {
+            if let idx = discoveredPeripherals.firstIndex(where: {
                 $0.peripheral.identifier == peripheral.identifier || $0.peripheral.name == peripheral.name
             }) {
-                self?.discoveredPeripherals[idx] = discovered
+                discoveredPeripherals[idx] = discovered
             } else {
-                self?.discoveredPeripherals.append(discovered)
+                discoveredPeripherals.append(discovered)
             }
         }
     }
 
     nonisolated func centralManager(_ central: CBCentralManager,
                                     didConnect peripheral: CBPeripheral) {
-        MainActor.run { [weak self] in
-            self?.connectionState = .discoveringServices
+        MainActor.assumeIsolated {
+            connectionState = .discoveringServices
             peripheral.delegate = self
             peripheral.discoverServices([BLEConstants.serviceUUID])
         }
@@ -199,10 +202,9 @@ extension BLEManager: CBCentralManagerDelegate {
     nonisolated func centralManager(_ central: CBCentralManager,
                                     didFailToConnect peripheral: CBPeripheral,
                                     error: Error?) {
-        MainActor.run { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             let reason = error?.localizedDescription ?? "连接失败"
             self?.connectionState = .disconnected(reason: reason)
-            // 尝试重连
             DispatchQueue.main.asyncAfter(deadline: .now() + BLEConstants.reconnectDelay) {
                 self?.attemptReconnect()
             }
@@ -212,7 +214,7 @@ extension BLEManager: CBCentralManagerDelegate {
     nonisolated func centralManager(_ central: CBCentralManager,
                                     didDisconnectPeripheral peripheral: CBPeripheral,
                                     error: Error?) {
-        MainActor.run { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             if self.isUserDisconnecting {
                 self.connectionState = .idle
@@ -221,11 +223,8 @@ extension BLEManager: CBCentralManagerDelegate {
                 self.reconnectAttempts = 0
                 return
             }
-
             let reason = error?.localizedDescription ?? "连接断开"
             self.connectionState = .disconnected(reason: reason)
-
-            // 自动重连
             DispatchQueue.main.asyncAfter(deadline: .now() + BLEConstants.reconnectDelay) {
                 self.attemptReconnect()
             }
@@ -239,9 +238,9 @@ extension BLEManager: CBPeripheralDelegate {
 
     nonisolated func peripheral(_ peripheral: CBPeripheral,
                                 didDiscoverServices error: Error?) {
-        MainActor.run { [weak self] in
+        MainActor.assumeIsolated {
             guard let service = peripheral.services?.first(where: { $0.uuid == BLEConstants.serviceUUID }) else {
-                self?.connectionState = .disconnected(reason: "未发现 BLE 服务")
+                connectionState = .disconnected(reason: "未发现 BLE 服务")
                 return
             }
             peripheral.discoverCharacteristics([BLEConstants.characteristicUUID], for: service)
@@ -251,16 +250,16 @@ extension BLEManager: CBPeripheralDelegate {
     nonisolated func peripheral(_ peripheral: CBPeripheral,
                                 didDiscoverCharacteristicsFor service: CBService,
                                 error: Error?) {
-        MainActor.run { [weak self] in
+        MainActor.assumeIsolated {
             guard let characteristic = service.characteristics?.first(where: {
                 $0.uuid == BLEConstants.characteristicUUID
             }) else {
-                self?.connectionState = .disconnected(reason: "未发现数据特征")
+                connectionState = .disconnected(reason: "未发现数据特征")
                 return
             }
-            self?.txCharacteristic = characteristic
-            self?.reconnectAttempts = 0
-            self?.connectionState = .ready
+            txCharacteristic = characteristic
+            reconnectAttempts = 0
+            connectionState = .ready
         }
     }
 }

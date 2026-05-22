@@ -33,6 +33,12 @@ extension ConnectionState {
         }
     }
 
+    /// 是否处于不可恢复错误状态
+    var isError: Bool {
+        if case .error = self { return true }
+        return false
+    }
+
     /// 状态描述文本
     var displayText: String {
         switch self {

@@ -17,7 +17,6 @@ struct ConnectionView: View {
                 Image(systemName: stateIcon)
                     .font(.system(size: 48))
                     .foregroundStyle(.tint)
-                    .symbolEffect(.pulse, options: .repeating, isActive: state == .scanning)
 
                 Text(state.displayText)
                     .font(.headline)
@@ -38,17 +37,24 @@ struct ConnectionView: View {
             }
             .buttonStyle(.borderedProminent)
             .padding(.horizontal)
-            .disabled(state == .error)
+            .disabled(state.isError)
 
             // 设备列表
             if peripherals.isEmpty && state != .scanning {
                 Spacer()
-                ContentUnavailableView(
-                    "未发现设备",
-                    systemImage: "magnifyingglass",
-                    description: Text("确认 HM-10 已上电且在小车扩展板上")
-                )
-                .foregroundStyle(.secondary)
+                VStack(spacing: 12) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.secondary)
+                    Text("未发现设备")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text("确认 HM-10 已上电且在小车扩展板上")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
                 Spacer()
             } else {
                 List {

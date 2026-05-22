@@ -18,7 +18,14 @@ final class CarControlViewModel: ObservableObject {
     @Published private(set) var connectionState: ConnectionState = .idle
     /// 当前速度档位，范围 1–9
     @Published var currentSpeed: Int = 5 {
-        didSet { onSpeedChange(from: oldValue, to: currentSpeed) }
+        didSet {
+            let clamped = clampSpeed(currentSpeed)
+            if clamped != currentSpeed {
+                currentSpeed = clamped
+                return
+            }
+            onSpeedChange(from: oldValue, to: currentSpeed)
+        }
     }
     /// 当前运动方向，`nil` 表示停止
     @Published private(set) var currentDirection: Direction?
@@ -29,6 +36,7 @@ final class CarControlViewModel: ObservableObject {
 
     private let bleManager: any BLEManaging
     private var cancellables = Set<AnyCancellable>()
+    private var heartbeatCancellable: AnyCancellable?
 
     // MARK: - Init
 
@@ -50,10 +58,12 @@ final class CarControlViewModel: ObservableObject {
         }
         currentDirection = direction
         bleManager.send(.directionPress(direction))
+        startHeartbeat(direction)
     }
 
     /// 松开方向按钮。
     func releaseDirection() {
+        stopHeartbeat()
         currentDirection = nil
         bleManager.send(.directionRelease)
     }
@@ -62,9 +72,8 @@ final class CarControlViewModel: ObservableObject {
 
     private func onSpeedChange(from old: Int, to new: Int) {
         guard new != old, connectionState == .ready else { return }
-        let clamped = clampSpeed(new)
-        bleManager.send(.speedPress(clamped))
-        bleManager.send(.speedRelease(clamped))
+        bleManager.send(.speedPress(new))
+        bleManager.send(.speedRelease(new))
     }
 
     // MARK: - 连接管理
@@ -94,8 +103,31 @@ final class CarControlViewModel: ObservableObject {
 
     /// 发送紧急停车指令并清理本地状态。
     func sendEmergencyStop() {
+        stopHeartbeat()
         bleManager.send(.emergencyStop)
         currentDirection = nil
+    }
+
+    // MARK: - Private: 心跳
+
+    /// 开始每 100 ms 重发一次方向指令，防止固件超时停车。
+    private func startHeartbeat(_ direction: Direction) {
+        stopHeartbeat()
+        heartbeatCancellable = Timer.publish(
+            every: BLEConstants.heartbeatInterval,
+            on: .main,
+            in: .common
+        )
+        .autoconnect()
+        .sink { [weak self] _ in
+            guard let self, self.connectionState == .ready else { return }
+            self.bleManager.send(.directionPress(direction))
+        }
+    }
+
+    private func stopHeartbeat() {
+        heartbeatCancellable?.cancel()
+        heartbeatCancellable = nil
     }
 
     // MARK: - Private: Combine 绑定
@@ -105,6 +137,7 @@ final class CarControlViewModel: ObservableObject {
             .sink { [weak self] state in
                 self?.connectionState = state
                 if case .disconnected = state {
+                    self?.stopHeartbeat()
                     self?.currentDirection = nil
                 }
             }

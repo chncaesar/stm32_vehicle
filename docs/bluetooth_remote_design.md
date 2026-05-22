@@ -225,9 +225,39 @@ int main(void)
 
 ---
 
-## 6. 待办事项
+## 6. iOS 遥控 App 实现
+
+iOS App 已完整实现，位置：`ios_app/STM32Car/`
+
+### 功能清单
+
+- ✅ BLE 设备扫描与连接（HM-10）
+- ✅ 四方向方向盘控制（前进、后退、左转、右转）
+- ✅ 紧急停车按钮
+- ✅ 速度 1–9 档滑块调节
+- ✅ 连接状态显示与信号强度（RSSI）
+- ✅ 后台自动停车保护
+- ✅ 自动重连机制
+- ✅ 蓝牙权限检查与错误提示
+- ✅ 单元测试（BLECommand 编码、ViewModel 逻辑）
+
+### 架构
+
+| 模块 | 职责 |
+|------|------|
+| `BLE/BLEManager.swift` | CoreBluetooth 封装，扫描/连接/服务发现 |
+| `BLE/BLECommand.swift` | 指令编码（3 字节 ASCII + `\r\n`） |
+| `ViewModels/CarControlViewModel.swift` | 业务逻辑，桥接 BLE 与 UI |
+| `Views/ControlView.swift` | 主遥控页面 |
+| `Views/DirectionPad.swift` | 方向盘组件 |
+| `Views/SpeedSlider.swift` | 速度滑块组件 |
+| `Views/ConnectionView.swift` | 设备扫描与连接页面 |
+
+---
+
+## 7. 待办事项
 
 - [ ] 收到 HM-10 模块后按接线表连接扩展板 P16
 - [ ] 用 LightBlue 验证 BLE 连接和指令收发
-- [ ] 验证电机响应正确
-- [ ] 开发 iOS 遥控 App（第二阶段）
+- [ ] 完成固件改造并验证电机响应
+- [x] 开发 iOS 遥控 App（第二阶段）

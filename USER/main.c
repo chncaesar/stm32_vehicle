@@ -69,8 +69,12 @@ int main(void)
 	KEY_Init();
 
 	driving_state_stop();
-	// 上电后等 led_beep_switch 完成再开始计时，避免误判超时
 	led_beep_switch(3);
+
+	// delay_ms() 会关闭 SysTick，重新配置以恢复 1ms 中断
+	SysTick->LOAD = 9000 - 1;
+	SysTick->VAL  = 0;
+	SysTick->CTRL = SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 	last_rx_tick = bt_tick;
 
 	while (1) {

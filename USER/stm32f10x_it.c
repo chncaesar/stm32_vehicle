@@ -75,9 +75,7 @@ void PendSV_Handler(void)
 {
 }
  
-void SysTick_Handler(void)
-{
-}
+// SysTick_Handler 在 main.c 中定义
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */

@@ -58,6 +58,7 @@ int main(void)
 	uart_init(9600);
 
 	// 配置 SysTick 为 1ms 中断（HCLK/8 = 9MHz，9000 计数 = 1ms）
+	SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
 	SysTick->LOAD = 9000 - 1;
 	SysTick->VAL  = 0;
 	SysTick->CTRL = SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
@@ -72,6 +73,7 @@ int main(void)
 	led_beep_switch(3);
 
 	// delay_ms() 会关闭 SysTick，重新配置以恢复 1ms 中断
+	SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
 	SysTick->LOAD = 9000 - 1;
 	SysTick->VAL  = 0;
 	SysTick->CTRL = SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;

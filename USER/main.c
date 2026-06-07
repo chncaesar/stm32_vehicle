@@ -35,19 +35,32 @@ void led_beep_switch(u8 value)
 static void bluetooth_cmd_parse(void)
 {
 	u8 len = USART_RX_STA & 0x3FFF;
+	u8 i;
+
 	last_rx_tick = bt_tick;
+
+	printf("[RX len=%d:", len);
+	for (i = 0; i < len && i < 10; i++) {
+		printf("%c", USART_RX_BUF[i]);
+	}
+	printf("]\r\n");
+
 	if (len == 3) {
-		if      (strncmp((char*)USART_RX_BUF, "ONA", 3) == 0) driving_state_run(current_speed);
-		else if (strncmp((char*)USART_RX_BUF, "ONB", 3) == 0) driving_state_back(current_speed);
-		else if (strncmp((char*)USART_RX_BUF, "ONC", 3) == 0) driving_state_left(current_speed);
-		else if (strncmp((char*)USART_RX_BUF, "OND", 3) == 0) driving_state_right(current_speed);
-		else if (strncmp((char*)USART_RX_BUF, "ONE", 3) == 0) driving_state_stop();
-		else if (strncmp((char*)USART_RX_BUF, "ONF", 3) == 0) driving_state_stop();
+		if      (strncmp((char*)USART_RX_BUF, "ONA", 3) == 0) { printf("CMD: FWD\r\n"); driving_state_run(current_speed); }
+		else if (strncmp((char*)USART_RX_BUF, "ONB", 3) == 0) { printf("CMD: BACK\r\n"); driving_state_back(current_speed); }
+		else if (strncmp((char*)USART_RX_BUF, "ONC", 3) == 0) { printf("CMD: LEFT\r\n"); driving_state_left(current_speed); }
+		else if (strncmp((char*)USART_RX_BUF, "OND", 3) == 0) { printf("CMD: RIGHT\r\n"); driving_state_right(current_speed); }
+		else if (strncmp((char*)USART_RX_BUF, "ONE", 3) == 0) { printf("CMD: STOP\r\n"); driving_state_stop(); }
+		else if (strncmp((char*)USART_RX_BUF, "ONF", 3) == 0) { printf("CMD: STOPF\r\n"); driving_state_stop(); }
 		else if (USART_RX_BUF[0] == 'O' && USART_RX_BUF[1] == 'N') {
 			char c = (char)USART_RX_BUF[2];
-			if (c >= '1' && c <= '9')
+			if (c >= '1' && c <= '9') {
 				current_speed = 20 + (c - '1') * 10;
+				printf("CMD: SPEED=%d\r\n", current_speed);
+			}
 		}
+	} else {
+		printf("CMD: BADLEN\r\n");
 	}
 	USART_RX_STA = 0;
 }
@@ -78,6 +91,8 @@ int main(void)
 	SysTick->VAL  = 0;
 	SysTick->CTRL = SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 	last_rx_tick = bt_tick;
+
+	printf("=== STM32 Car Boot ===\r\n");
 
 	while (1) {
 		if (USART_RX_STA & 0x8000) {

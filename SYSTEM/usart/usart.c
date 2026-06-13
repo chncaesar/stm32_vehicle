@@ -42,7 +42,14 @@ u8 USART_RX_BUF[USART_REC_LEN];     //���ջ���,���USART_REC_LE
 //bit14��	���յ�0x0d
 //bit13~0��	���յ�����Ч�ֽ���Ŀ
 volatile u16 USART_RX_STA=0;  //����״̬���
-  
+
+// === 调试用（排查完删除）===
+volatile u32 dbg_isr_count  = 0;   // ISR 进入总次数
+volatile u32 dbg_rxne_count = 0;   // 成功收到字节数（RXNE）
+volatile u32 dbg_err_count  = 0;   // 错误标志出现次数（ORE/FE/NE/PE）
+volatile u8  dbg_last_byte  = 0;   // 最后收到的原始字节
+volatile u16 dbg_last_sr    = 0;   // 最后的状态寄存器快照
+
 void uart_init(u32 bound){
   //GPIO�˿�����
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -88,12 +95,22 @@ void USART1_IRQHandler(void)                	//����1�жϷ�����
 	{
 	u8 Res;
 #if SYSTEM_SUPPORT_OS 		//���SYSTEM_SUPPORT_OSΪ�棬����Ҫ֧��OS.
-	OSIntEnter();    
+	OSIntEnter();
 #endif
+
+	dbg_isr_count++;              // 每次进 ISR 计数
+	dbg_last_sr = USART1->SR;     // 抓一份状态寄存器快照
+	if (USART1->SR & (USART_FLAG_ORE | USART_FLAG_FE | USART_FLAG_NE | USART_FLAG_PE)) {
+		dbg_err_count++;          // 溢出/帧错误/噪声/校验错误
+	}
+
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //�����ж�(���յ������ݱ�����0x0d 0x0a��β)
 		{
 		Res =USART_ReceiveData(USART1);	//��ȡ���յ�������
-		
+
+		dbg_rxne_count++;        // 成功收到一个字节
+		dbg_last_byte = Res;     // 记下原始字节值
+
 		if((USART_RX_STA&0x8000)==0)//����δ���
 			{
 			if(USART_RX_STA&0x4000)//���յ���0x0d

@@ -95,11 +95,20 @@ int main(void)
 	printf("=== STM32 Car Boot ===\r\n");
 
 	while (1) {
+		static u32 last_dbg_tick = 0;
 		if (USART_RX_STA & 0x8000) {
 			bluetooth_cmd_parse();
 		}
 		if (bt_tick - last_rx_tick > BT_TIMEOUT_MS) {
 			driving_state_stop();
+		}
+
+		// === 调试：每 1 秒打一次 USART 接收计数器（排查完删除）===
+		if (bt_tick - last_dbg_tick > 1000) {
+			last_dbg_tick = bt_tick;
+			printf("[DBG isr=%u rxne=%u err=%u last=0x%02X sr=0x%04X]\r\n",
+			       dbg_isr_count, dbg_rxne_count, dbg_err_count,
+			       dbg_last_byte, dbg_last_sr);
 		}
 	}
 }

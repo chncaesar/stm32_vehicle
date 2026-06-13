@@ -19,6 +19,10 @@
 	  	
 extern u8  USART_RX_BUF[USART_REC_LEN]; //���ջ���,���USART_REC_LEN���ֽ�.ĩ�ֽ�Ϊ���з�
 extern volatile u16 USART_RX_STA;      //����״̬���
+// === 调试用（排查完删除）===
+extern volatile u32 dbg_isr_count, dbg_rxne_count, dbg_err_count;
+extern volatile u8  dbg_last_byte;
+extern volatile u16 dbg_last_sr;
 //����봮���жϽ��գ��벻Ҫע�����º궨��
 void uart_init(u32 bound);
 #endif

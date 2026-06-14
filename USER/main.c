@@ -8,7 +8,7 @@
 #include "string.h"
 #include <stdio.h>
 
-#define BT_TIMEOUT_MS  500
+#define BT_TIMEOUT_MS  600000   // 调试用：单发一次指令跑 10 分钟，方便万用表测量。排查完改回 500
 
 volatile u32 bt_tick = 0;          // SysTick 每 1ms 自增
 static u32   last_rx_tick = 0;
@@ -92,7 +92,6 @@ int main(void)
 	SysTick->CTRL = SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 	last_rx_tick = bt_tick;
 
-	printf("=== STM32 Car Boot ===\r\n");
 
 	while (1) {
 		static u32 last_dbg_tick = 0;
@@ -103,8 +102,8 @@ int main(void)
 			driving_state_stop();
 		}
 
-		// === 调试：每 1 秒打一次 USART 接收计数器（排查完删除）===
-		if (bt_tick - last_dbg_tick > 1000) {
+		// === 调试：每 10 秒打一次 USART 接收计数器（排查完删除）===
+		if (bt_tick - last_dbg_tick > 10000) {
 			last_dbg_tick = bt_tick;
 			printf("[DBG isr=%u rxne=%u err=%u last=0x%02X sr=0x%04X]\r\n",
 			       dbg_isr_count, dbg_rxne_count, dbg_err_count,
